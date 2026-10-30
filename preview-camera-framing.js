@@ -239,9 +239,11 @@
     ctx.save(); ctx.translate(350, 285); ctx.rotate(spec.parameters.roll); ctx.translate(-350, -285); mainFrame(ctx, colors, "수평선 롤"); human(ctx, 350, 430, 60, colors); line(ctx, [36, 285], [662, 285], colors.accent, 2); ctx.restore(); relation(ctx, colors, spec, spec.parameters.roll < 0 ? "왼쪽 더치" : "오른쪽 더치");
   }
 
-  function draw(ctx, previewId, t = 0, options = {}) {
+  function draw(target, previewId, t = 0, options = {}) {
     const item = CATALOG.find((entry) => entry.previewId === previewId);
     if (!item) throw new RangeError(`Unknown camera framing preview: ${previewId}`);
+    const ctx = target && typeof target.getContext === "function" ? target.getContext("2d") : target;
+    if (!ctx || typeof ctx.save !== "function") throw new TypeError("A Canvas2D context or canvas is required");
     const colors = options.dark ? COLORS.dark : COLORS.light;
     const spec = sample(previewId, t);
     const c = spec.parameters;
