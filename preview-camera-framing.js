@@ -175,15 +175,16 @@
 
   function drawShot(ctx, colors, spec) {
     const c = spec.parameters;
+    const wave = Math.sin(c.progress * TAU);
     mainFrame(ctx, colors, c.crop);
     ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip();
     if (c.long) { ctx.fillStyle = colors.far; ctx.fillRect(150, 270, 34, 180); ctx.fillRect(575, 250, 34, 200); human(ctx, 520, 428, 27, colors, "far"); }
     else { ctx.fillStyle = colors.far; ctx.fillRect(155, 280, 34, 170); ctx.fillRect(577, 260, 34, 190); }
-    if (c.ots) { human(ctx, 110, 440, 160, colors, "near"); human(ctx, 445, 430, .9 * c.scale, colors, "hero"); ctx.fillStyle = colors.surface; ctx.fillRect(36, 116, 56, 334); }
-    else if (c.overHip) { ctx.fillStyle = colors.near; ctx.fillRect(36, 330, 225, 120); human(ctx, 445, 430, .9 * c.scale, colors, "hero"); text(ctx, "전경 허리", 148, 355, colors.ink, 11, "center"); }
-    else if (c.count === 2) { human(ctx, 210, 430, .82 * c.scale, colors, "near"); human(ctx, 490, 430, .82 * c.scale, colors, "hero"); arrow(ctx, [250, 320], [450, 320], colors.accent); }
-    else if (c.count === 3) { human(ctx, 210, 430, .75 * c.scale, colors, "hero"); human(ctx, 350, 430, .75 * c.scale, colors, "near"); human(ctx, 490, 430, .75 * c.scale, colors, "hero"); }
-    else human(ctx, 350, c.scale > 100 ? 505 : 430, c.scale, colors, "hero", c.profile);
+    if (c.ots) { human(ctx, 110 + wave * 7, 440, 160, colors, "near"); human(ctx, 445 - wave * 5, 430, .9 * c.scale, colors, "hero"); ctx.fillStyle = colors.surface; ctx.fillRect(36, 116, 56, 334); }
+    else if (c.overHip) { ctx.fillStyle = colors.near; ctx.fillRect(36, 330 + wave * 4, 225, 120); human(ctx, 445 - wave * 5, 430, .9 * c.scale, colors, "hero"); text(ctx, "전경 허리", 148, 355, colors.ink, 11, "center"); }
+    else if (c.count === 2) { const spread = 1 + wave * .06; human(ctx, 210 - wave * 8, 430, .82 * c.scale * spread, colors, "near"); human(ctx, 490 + wave * 8, 430, .82 * c.scale * spread, colors, "hero"); arrow(ctx, [250 - wave * 6, 320], [450 + wave * 6, 320], colors.accent); }
+    else if (c.count === 3) { human(ctx, 210 - wave * 6, 430, .75 * c.scale, colors, "hero"); human(ctx, 350, 430 - wave * 3, .75 * c.scale, colors, "near"); human(ctx, 490 + wave * 6, 430, .75 * c.scale, colors, "hero"); }
+    else human(ctx, 350 + Math.sin(c.progress * TAU) * 5, c.scale > 100 ? 505 : 430, c.scale, colors, "hero", c.profile);
     if (c.central) { line(ctx, [350, 116], [350, 450], colors.accent, 1, [4, 4]); line(ctx, [36, 283], [662, 283], colors.accent, 1, [4, 4]); }
     if (c.heightLine) { const y = 430 - c.height * 58; line(ctx, [52, y], [642, y], colors.accent, 1.4, [5, 4]); text(ctx, c.heightLabel, 58, y - 8, colors.accent, 11); }
     ctx.restore();
@@ -197,8 +198,9 @@
     mainFrame(ctx, colors, c.title || "화각 비교");
     ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip();
     grid(ctx, 36, 116, 626, 334, colors);
-    ctx.fillStyle = colors.near; ctx.fillRect(102, 314 - c.near / 2, c.near * 1.5, c.near);
-    human(ctx, 505, 430, c.far / 25, colors, "hero");
+    const pulse = 1 + Math.sin(c.progress * TAU) * .05;
+    ctx.fillStyle = colors.near; ctx.fillRect(102, 314 - c.near * pulse / 2, c.near * 1.5 * pulse, c.near * pulse);
+    human(ctx, 505 + Math.sin(c.progress * TAU) * 7, 430, c.far / 25, colors, "hero");
     ctx.restore(); camera(ctx, 82, 415, colors); arrow(ctx, [104, 415], [450, 325], colors.accent); relation(ctx, colors, spec, c.title || "렌즈 관계");
   }
 
@@ -206,37 +208,43 @@
     mainFrame(ctx, colors, "직선이 휘는 어안 근사");
     ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip();
     ctx.strokeStyle = colors.accent; ctx.lineWidth = 1.4;
-    for (let i = -4; i <= 4; i += 1) { ctx.beginPath(); ctx.moveTo(42, 285 + i * 38); ctx.bezierCurveTo(250, 250 + i * 30, 450, 250 + i * 30, 656, 285 + i * 38); ctx.stroke(); ctx.beginPath(); ctx.moveTo(350 + i * 60, 118); ctx.bezierCurveTo(300 + i * 34, 210, 300 + i * 34, 360, 350 + i * 60, 448); ctx.stroke(); }
+    const drift = Math.sin(spec.parameters.progress * TAU) * 12;
+    for (let i = -4; i <= 4; i += 1) { ctx.beginPath(); ctx.moveTo(42, 285 + i * 38 + drift); ctx.bezierCurveTo(250, 250 + i * 30 - drift, 450, 250 + i * 30 + drift, 656, 285 + i * 38 - drift); ctx.stroke(); ctx.beginPath(); ctx.moveTo(350 + i * 60, 118); ctx.bezierCurveTo(300 + i * 34, 210 + drift, 300 + i * 34, 360 - drift, 350 + i * 60, 448); ctx.stroke(); }
     human(ctx, 350, 430, 74, colors); ctx.restore(); relation(ctx, colors, spec, "어안 투영의 시각적 근사");
   }
 
   function drawOmni(ctx, colors, spec) {
     mainFrame(ctx, colors, "360° 커버리지 / 오비트 아님");
-    const x = 350, y = 285; ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 112, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, 70, 0, TAU); ctx.stroke(); camera(ctx, x, y, colors, "360 카메라");
-    [[0, -1, "앞"], [1, 0, "오른쪽"], [0, 1, "뒤"], [-1, 0, "왼쪽"]].forEach(([dx, dy, label]) => { human(ctx, x + dx * 155, y + dy * 105, 25, colors); text(ctx, label, x + dx * 155, y + dy * 105 + (dy > 0 ? 42 : -46), colors.muted, 10, "center"); });
+    const x = 350, y = 285, angle = spec.parameters.progress * TAU; ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 112, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, 70, 0, TAU); ctx.stroke(); camera(ctx, x, y, colors, "360 카메라");
+    [[0, -1, "앞"], [1, 0, "오른쪽"], [0, 1, "뒤"], [-1, 0, "왼쪽"]].forEach(([dx, dy, label], index) => { const a = angle + index * Math.PI / 2; const px = x + Math.cos(a) * 155; const py = y + Math.sin(a) * 105; human(ctx, px, py, 25, colors); text(ctx, label, px, py + (dy > 0 ? 42 : -46), colors.muted, 10, "center"); });
     text(ctx, "주변 전체를 기록하는 범위", x, 428, colors.ink, 12, "center"); relation(ctx, colors, spec, "커버리지 설명");
   }
 
   function drawProbe(ctx, colors, spec) {
     mainFrame(ctx, colors, "프로브 렌즈 / 일반 매크로 비교"); camera(ctx, 84, 382, colors, "프로브");
-    ctx.fillStyle = colors.dark; ctx.fillRect(100, 374, 255, 16); ctx.fillRect(350, 367, 80, 30); ctx.fillStyle = colors.accent; ctx.fillRect(430, 356, 24, 52); ctx.fillStyle = colors.hero; ctx.beginPath(); ctx.arc(510, 382, 19, 0, TAU); ctx.fill();
+    const reach = Math.sin(spec.parameters.progress * TAU) * 28;
+    ctx.fillStyle = colors.dark; ctx.fillRect(100, 374, 255 + reach, 16); ctx.fillRect(350 + reach, 367, 80, 30); ctx.fillStyle = colors.accent; ctx.fillRect(430 + reach, 356, 24, 52); ctx.fillStyle = colors.hero; ctx.beginPath(); ctx.arc(510 + reach, 382, 19, 0, TAU); ctx.fill();
     line(ctx, [110, 428], [550, 428], colors.line); text(ctx, "긴 렌즈가 좁은 틈 안으로 들어감", 320, 448, colors.muted, 11, "center"); relation(ctx, colors, spec, "튜브 길이와 피사체 거리");
   }
 
   function drawTilt(ctx, colors, spec) {
-    mainFrame(ctx, colors, "선택적 초점면"); ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip(); grid(ctx, 36, 116, 626, 334, colors); ctx.fillStyle = colors.blur; ctx.fillRect(36, 116, 626, 122); ctx.fillRect(36, 370, 626, 80); human(ctx, 350, 430, 53, colors); ctx.strokeStyle = colors.yellow; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(36, 346); ctx.lineTo(662, 285); ctx.stroke(); ctx.restore(); panel(ctx, 720, 160, 194, 140, colors); text(ctx, "선명한 띠", 817, 190, colors.muted, 12, "center"); line(ctx, [744, 250], [889, 226], colors.yellow, 5); text(ctx, "실제 광학의 근사", 817, 278, colors.ink, 10, "center"); relation(ctx, colors, spec, "초점면 도식");
+    const shift = Math.sin(spec.parameters.progress * TAU) * 34;
+    mainFrame(ctx, colors, "선택적 초점면"); ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip(); grid(ctx, 36, 116, 626, 334, colors); ctx.fillStyle = colors.blur; ctx.fillRect(36, 116, 626, 122 + shift); ctx.fillRect(36, 370 + shift, 626, 80 - shift); human(ctx, 350, 430, 53, colors); ctx.strokeStyle = colors.yellow; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(36, 346 + shift); ctx.lineTo(662, 285 + shift); ctx.stroke(); ctx.restore(); panel(ctx, 720, 160, 194, 140, colors); text(ctx, "선명한 띠", 817, 190, colors.muted, 12, "center"); line(ctx, [744, 250 + shift * .3], [889, 226 + shift * .3], colors.yellow, 5); text(ctx, "실제 광학의 근사", 817, 278, colors.ink, 10, "center"); relation(ctx, colors, spec, "초점면 도식");
   }
 
   function drawUnderwater(ctx, colors, spec) {
-    mainFrame(ctx, colors, "수중 촬영 개념"); ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip(); ctx.fillStyle = "rgba(44,166,177,.35)"; ctx.fillRect(36, 116, 626, 334); ctx.strokeStyle = colors.water; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(36, 170); ctx.bezierCurveTo(240, 150, 460, 188, 662, 158); ctx.stroke(); ctx.strokeStyle = "rgba(242,255,246,.36)"; ctx.lineWidth = 2; [[140, 116, 245, 370], [360, 116, 420, 340], [575, 116, 500, 370]].forEach(([x1, y1, x2, y2]) => line(ctx, [x1, y1], [x2, y2], "rgba(242,255,246,.36)", 2)); for (let i = 0; i < 28; i += 1) { const x = 50 + (i * 137) % 590; const y = 198 + (i * 59) % 225; ctx.fillStyle = `rgba(235,255,250,${.15 + (i % 4) * .07})`; ctx.beginPath(); ctx.arc(x, y, 1 + i % 3, 0, TAU); ctx.fill(); } human(ctx, 350, 400, 49, colors); ctx.restore(); relation(ctx, colors, spec, "수면선과 부유 입자");
+    const wave = Math.sin(spec.parameters.progress * TAU) * 14;
+    mainFrame(ctx, colors, "수중 촬영 개념"); ctx.save(); ctx.beginPath(); ctx.rect(36, 116, 626, 334); ctx.clip(); ctx.fillStyle = "rgba(44,166,177,.35)"; ctx.fillRect(36, 116, 626, 334); ctx.strokeStyle = colors.water; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(36, 170 + wave); ctx.bezierCurveTo(240, 150 - wave, 460, 188 + wave, 662, 158 - wave); ctx.stroke(); ctx.strokeStyle = "rgba(242,255,246,.36)"; ctx.lineWidth = 2; [[140, 116, 245, 370], [360, 116, 420, 340], [575, 116, 500, 370]].forEach(([x1, y1, x2, y2]) => line(ctx, [x1, y1], [x2, y2], "rgba(242,255,246,.36)", 2)); for (let i = 0; i < 28; i += 1) { const x = 50 + (i * 137) % 590 + Math.sin(spec.parameters.progress * TAU + i) * 7; const y = 198 + (i * 59) % 225; ctx.fillStyle = `rgba(235,255,250,${.15 + (i % 4) * .07})`; ctx.beginPath(); ctx.arc(x, y, 1 + i % 3, 0, TAU); ctx.fill(); } human(ctx, 350, 400, 49, colors); ctx.restore(); relation(ctx, colors, spec, "수면선과 부유 입자");
   }
 
   function drawVoyeur(ctx, colors, spec) {
-    mainFrame(ctx, colors, "가림막과 좁은 틈"); ctx.fillStyle = colors.occluder; ctx.fillRect(36, 116, 112, 334); ctx.fillRect(550, 116, 112, 334); ctx.fillStyle = "rgba(20,30,28,.28)"; ctx.fillRect(148, 116, 28, 334); ctx.fillRect(522, 116, 28, 334); human(ctx, 350, 430, 52, colors); camera(ctx, 82, 410, colors); arrow(ctx, [104, 410], [315, 300], colors.accent); relation(ctx, colors, spec, "전경 occlusion");
+    const shift = Math.sin(spec.parameters.progress * TAU) * 18;
+    mainFrame(ctx, colors, "가림막과 좁은 틈"); ctx.fillStyle = colors.occluder; ctx.fillRect(36 + shift, 116, 112, 334); ctx.fillRect(550 - shift, 116, 112, 334); ctx.fillStyle = "rgba(20,30,28,.28)"; ctx.fillRect(148 + shift, 116, 28, 334); ctx.fillRect(522 - shift, 116, 28, 334); human(ctx, 350, 430, 52, colors); camera(ctx, 82, 410, colors); arrow(ctx, [104, 410], [315, 300], colors.accent); relation(ctx, colors, spec, "전경 occlusion");
   }
 
   function drawDutch(ctx, colors, spec) {
-    ctx.save(); ctx.translate(350, 285); ctx.rotate(spec.parameters.roll); ctx.translate(-350, -285); mainFrame(ctx, colors, "수평선 롤"); human(ctx, 350, 430, 60, colors); line(ctx, [36, 285], [662, 285], colors.accent, 2); ctx.restore(); relation(ctx, colors, spec, spec.parameters.roll < 0 ? "왼쪽 더치" : "오른쪽 더치");
+    const roll = spec.parameters.roll + Math.sin(spec.parameters.progress * TAU) * .06;
+    ctx.save(); ctx.translate(350, 285); ctx.rotate(roll); ctx.translate(-350, -285); mainFrame(ctx, colors, "수평선 롤"); human(ctx, 350, 430, 60, colors); line(ctx, [36, 285], [662, 285], colors.accent, 2); ctx.restore(); relation(ctx, colors, spec, spec.parameters.roll < 0 ? "왼쪽 더치" : "오른쪽 더치");
   }
 
   function draw(target, previewId, t = 0, options = {}) {
@@ -250,7 +258,7 @@
     ctx.save(); ctx.setTransform(ctx.canvas.width / W, 0, 0, ctx.canvas.height / H, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; ctx.filter = "none"; ctx.setLineDash([]); ctx.clearRect(0, 0, W, H); ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, W, H);
     panel(ctx, 22, 18, 916, 44, colors, 12); text(ctx, item.name, 38, 46, colors.ink, 18, "left", 650); text(ctx, item.english, 920, 45, colors.muted, 11, "right");
     if (c.mode === "fisheye") drawFisheye(ctx, colors, spec); else if (c.mode === "omni") drawOmni(ctx, colors, spec); else if (c.mode === "probe") drawProbe(ctx, colors, spec); else if (c.mode === "tilt") drawTilt(ctx, colors, spec); else if (c.mode === "underwater") drawUnderwater(ctx, colors, spec); else if (c.mode === "voyeur") drawVoyeur(ctx, colors, spec); else if (c.mode === "dutch") drawDutch(ctx, colors, spec); else if (c.mode === "lens") drawLens(ctx, colors, spec); else drawShot(ctx, colors, spec);
-    text(ctx, "정적 도식 · 실제 광학 효과는 근사", 38, 510, colors.muted, 11); text(ctx, `FOV ${c.fov}°`, 920, 510, colors.muted, 11, "right"); ctx.restore();
+    text(ctx, "움직이는 개념 도식 · 실제 광학 효과는 근사", 38, 510, colors.muted, 11); text(ctx, `FOV ${c.fov}°`, 920, 510, colors.muted, 11, "right"); ctx.restore();
   }
 
   const definitions = Object.fromEntries(CATALOG.map((item) => [item.previewId, Object.freeze({ motion: false, sample: (t) => sample(item.previewId, t) })]));

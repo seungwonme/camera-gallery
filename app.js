@@ -1,12 +1,17 @@
 (() => {
   "use strict";
 
-  const state = { kind: "all", query: "", dark: false, maps: [] };
+  const state = { kind: "all", query: "", dark: false, paused: false, maps: [] };
   const $ = (selector) => document.querySelector(selector);
   const cards = $("#cards");
   const empty = $("#empty");
   const resultCount = $("#result-count");
   const kindLabels = { framing: "구도", optics: "광학/환경" };
+  const animated = new Map();
+  const visible = new Set();
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let animationFrame = 0;
+  let intersectionObserver;
 
   const sourceUrl = (itemId) => itemId.startsWith("eyecandy:")
     ? `https://eyecannndy.com/technique/${itemId.slice("eyecandy:".length)}`
@@ -29,6 +34,25 @@
     window.CameraFramingGallery.draw(canvas, previewId, 0, { dark: state.dark });
   }
 
+  function animate(now) {
+    const progress = (now % 9000) / 9000;
+    if (!reducedMotion.matches && !state.paused) {
+      visible.forEach((canvas) => {
+        const previewId = animated.get(canvas);
+        if (previewId) window.CameraFramingGallery.draw(canvas, previewId, progress, { dark: state.dark });
+      });
+    }
+    animationFrame = window.requestAnimationFrame(animate);
+  }
+
+  function registerPreview(canvas, previewId) {
+    animated.set(canvas, previewId);
+  }
+
+  function startAnimationLoop() {
+    if (!animationFrame && typeof window.requestAnimationFrame === "function") animationFrame = window.requestAnimationFrame(animate);
+  }
+
   function createCard(entry) {
     const renderer = window.CameraFramingGallery.catalog.find((item) => item.previewId === entry.previewId);
     const card = document.createElement("article"); card.className = "card";
@@ -41,18 +65,22 @@
     const body = document.createElement("div"); body.className = "card-body";
     const meta = document.createElement("div"); meta.className = "card-meta";
     const kind = document.createElement("span"); kind.textContent = kindLabels[entry.kind] || entry.kind;
-    const motion = document.createElement("span"); motion.textContent = entry.motion ? "motion" : "static"; meta.append(kind, motion);
+    const motion = document.createElement("span"); motion.textContent = "LIVE PREVIEW"; meta.append(kind, motion);
     const title = document.createElement("h2"); title.textContent = renderer?.name || entry.itemId;
     const english = document.createElement("p"); english.className = "english"; english.textContent = renderer?.english || entry.previewId;
     const details = document.createElement("dl"); details.className = "details";
     addDetail(details, "ID", entry.itemId); addDetail(details, "설명", entry.explanation); addDetail(details, "제한", entry.limitation); addDetail(details, "관찰", entry.qa.observable); addDetail(details, "시작/끝", `${entry.qa.start} / ${entry.qa.end}`);
     const source = document.createElement("a"); source.href = sourceUrl(entry.itemId); source.target = "_blank"; source.rel = "noreferrer"; source.textContent = "출처 보기"; source.className = "source-link";
-    body.append(meta, title, english, details, source); card.append(preview, body); drawCard(canvas, entry.previewId); return card;
+    body.append(meta, title, english, details, source); card.append(preview, body); drawCard(canvas, entry.previewId); registerPreview(canvas, entry.previewId); return card;
   }
 
   function render() {
+    visible.clear();
+    animated.clear();
+    if (intersectionObserver) intersectionObserver.disconnect();
     const filtered = state.maps.filter(matches);
     cards.replaceChildren(...filtered.map(createCard)); empty.hidden = filtered.length !== 0;
+    if (intersectionObserver) cards.querySelectorAll(".preview").forEach((preview) => intersectionObserver.observe(preview));
     resultCount.textContent = `${filtered.length}개`;
     document.querySelectorAll(".filter").forEach((button) => { const active = button.dataset.kind === state.kind; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); });
   }
@@ -66,6 +94,18 @@
   $("#search").addEventListener("input", (event) => { state.query = event.target.value.trim().toLowerCase(); render(); });
   document.querySelectorAll(".filter").forEach((button) => button.addEventListener("click", () => { state.kind = button.dataset.kind; render(); }));
   $("#theme-toggle").addEventListener("click", (event) => { state.dark = !state.dark; document.documentElement.classList.toggle("dark", state.dark); event.currentTarget.textContent = state.dark ? "밝은 화면" : "어두운 화면"; event.currentTarget.setAttribute("aria-pressed", String(state.dark)); render(); });
+  $("#motion-toggle").addEventListener("click", (event) => { state.paused = !state.paused; event.currentTarget.textContent = state.paused ? "재생" : "일시정지"; event.currentTarget.setAttribute("aria-pressed", String(!state.paused)); });
+
+  intersectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const canvas = entry.target.querySelector("canvas");
+      if (!canvas) return;
+      if (!animated.has(canvas)) return;
+      if (entry.isIntersecting) visible.add(canvas);
+      else visible.delete(canvas);
+    });
+  }, { rootMargin: "240px 0px" });
+  startAnimationLoop();
 
   fetch("camera-map-framing.json")
     .then((response) => { if (!response.ok) throw new Error(`Mapping request failed: ${response.status}`); return response.json(); })
